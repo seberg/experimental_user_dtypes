@@ -1,4 +1,5 @@
 import os
+import setuptools
 from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
@@ -18,7 +19,11 @@ ext_modules=[
             ),
     ]
 
-setup(
-  name="experimental_user_dtypes",
-  cmdclass={"build_ext": build_ext},
-  ext_modules=ext_modules)
+
+if __name__ == "__main__":
+    setup(
+      name="experimental_user_dtypes",
+      cmdclass={"build_ext": build_ext},
+      packages=setuptools.find_packages(),
+      ext_modules=ext_modules)
+

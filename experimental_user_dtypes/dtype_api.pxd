@@ -5,7 +5,7 @@ cimport numpy as npc
 
 
 cdef extern from "Python.h":
-    struct PyType_Slot:
+    ctypedef struct PyType_Slot:
         int slot
         void *pfunc
 
@@ -32,7 +32,6 @@ cdef extern from "numpy/experimental_dtype_api.h":
         # The descriptors:
         npc.PyArray_Descr **descriptors
 
-
     int NPY_METH_strided_loop
     int NPY_METH_contiguous_loop
     int NPY_METH_unaligned_strided_loop
@@ -43,4 +42,37 @@ cdef extern from "numpy/experimental_dtype_api.h":
         void *transferdata) except -1
 
     object PyArrayMethod_FromSpec(PyArrayMethod_Spec *spec)
+
+    #
+    # DType API.
+    #
+    int NPY_DTYPE_PARAMETRIC
+    int NPY_DTYPE_ABSTRACT
+
+    ctypedef struct PyArrayDTypeMeta_Spec:
+        char *name
+        PyTypeObject *typeobj
+        int flags
+        PyArrayMethod_Spec *casts
+        PyType_Slot *slots
+        PyTypeObject *baseclass
+
+    object PyArrayDTypeMeta_FromSpec(PyArrayDTypeMeta_Spec *spec)
+
+
+# These are things we have to make nicely available in NumPy eventually
+# (actually should probably use the C names, since that is technically more
+# correct)
+Int8 = type(np.dtype("int8"))
+Uint8 = type(np.dtype("uint8"))
+Int16 = type(np.dtype("int16"))
+Uint16 = type(np.dtype("uint16"))
+Int32 = type(np.dtype("int32"))
+Uint32 = type(np.dtype("uint32"))
+Int64 = type(np.dtype("int64"))
+Uint64 = type(np.dtype("uint64"))
+
+Float16 = type(np.dtype("e"))
+Float32 = type(np.dtype("f"))
+Float64 = type(np.dtype("d"))
 

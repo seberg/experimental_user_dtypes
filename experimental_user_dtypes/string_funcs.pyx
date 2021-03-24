@@ -7,6 +7,10 @@ cimport numpy as npc
 from . cimport dtype_api
 from libc.string cimport memcmp
 
+from ._utils import make_binary_ufunclike as _make_binary_ufunclike
+
+
+dtype_api.import_experimental_dtype_api(0)
 
 """
 The ArrayMethod will be used also for registering ufuncs.  At this time
@@ -17,10 +21,10 @@ The public API does not allow to optimize the loop all the way, but
 we will only write a strided inner-loop right now.
 """
 
-
-cdef int string_equality(dtype_api.PyArrayMethod_Context *context,
+cdef int string_equal_strided_loop(
+        dtype_api.PyArrayMethod_Context *context,
         char **data, npc.intp_t *dimensions, npc.intp_t *strides,
-        void *userdata):  # should be nogil...
+        void *userdata) nogil:
     """
     The data field is currently not accessible, since it would require
     either an additional "setup" function or exposure of `get_loop`.
@@ -29,15 +33,15 @@ cdef int string_equality(dtype_api.PyArrayMethod_Context *context,
     importantly the descriptors at this time.
     """
     cdef npc.intp_t N = dimensions[0]
-    cdef int elsize0 = (<npc.dtype>context.descriptors[0]).elsize
-    cdef int elsize1 = (<npc.dtype>context.descriptors[1]).elsize
+    cdef int elsize0 = (<npc.dtype>(context.descriptors[0])).itemsize
+    cdef int elsize1 = (<npc.dtype>(context.descriptors[1])).itemsize
 
     cdef int len_long, len_short
     cdef npc.intp_t stride_long, stride_short
 
     cdef char *in_long
     cdef char *in_short
-    cdef char *out = data[2]
+    cdef npc.npy_bool *out = <npc.npy_bool *>data[2]
 
     if  elsize0 >= elsize1:
         in_long = data[0]
@@ -68,7 +72,7 @@ cdef int string_equality(dtype_api.PyArrayMethod_Context *context,
 
     cdef int additional = len_long - len_short
     for i in range(N):
-        if not memcmp(in_long, in_short, len_short) != 0:
+        if memcmp(in_long, in_short, len_short) != 0:
             out[i] = 0
         else:
             for j in range(len_short, len_long):
@@ -78,23 +82,50 @@ cdef int string_equality(dtype_api.PyArrayMethod_Context *context,
             else:
                 # all characters are '\0', so the strings match.
                 out[i] = 1
-            out[i] = 0
 
         in_long += stride_long
         in_short += stride_short
 
 
-# Statically declare spec (can be discarted later):
+# We now declare the `spec` and fill it (it can be discarted later).
+# This prepares all information for the public NumPy API to create a new
+# ArrayMethod which is practically identical to a ufunc-loop registration.
+# This is a bit convoluted (and actually nicer in C compared to Cython)
+# but the steps are straight forward.
 cdef dtype_api.PyArrayMethod_Spec spec
+
+# Basic information:
 spec.name = "string_equal"
 spec.nin = 2
 spec.nout = 1
+
+# Define the dtypes we operate on:
 cdef PyObject *dtypes[3]
 spec.dtypes = dtypes
-# Not used right now, but we can indicate not to check float errors:
+
+str_dtype = type(np.dtype("S"))
+bool_dtype = type(np.dtype("?"))
+dtypes[0] = <PyObject *>str_dtype
+dtypes[1] = <PyObject *>str_dtype
+dtypes[2] = <PyObject *>bool_dtype
+
+
+# Define the function:
+cdef dtype_api.PyType_Slot slots[2]
+spec.slots = slots
+
+# Pass the function using the 0 terminated slots.
+slots[0].slot = dtype_api.NPY_METH_strided_loop
+slots[0].pfunc = <void *>string_equal_strided_loop
+slots[1].slot = 0
+slots[1].pfunc = <void *>0
+
+# Not used right now, but we can indicate not to check float errors,
+# we do not require the GIL to be held, which is the default (currently):
 spec.flags = dtype_api.NPY_METH_NO_FLOATINGPOINT_ERRORS
-    
 
-_string_equality_arraymethod = dtype_api.PyArrayMethod_FromSpec(&spec)
 
+_string_equal_arraymethod = dtype_api.PyArrayMethod_FromSpec(&spec)
+string_equal = _make_binary_ufunclike(_string_equal_arraymethod,
+        name="string_equal", module=__name__)
 
