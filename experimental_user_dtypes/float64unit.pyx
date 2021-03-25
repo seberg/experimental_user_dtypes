@@ -100,6 +100,11 @@ cdef class _Float64UnitDTypeBase(npc.dtype):
     def __str__(self):
         return self.name
 
+    def si(self):
+        """Returns the SI verison of the dtype"""
+        # I assume `get_base_equivalent()` gives SI?
+        return Float64UnitDType(self.unit.get_base_equivalent())
+
 
 cdef npc.NPY_CASTING unit_to_unit_cast_resolve_descriptors(method,
         PyObject *dtypes[2],
