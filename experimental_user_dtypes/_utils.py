@@ -22,7 +22,6 @@ def make_binary_ufunclike(method, name=None, module=None):
         res = it.operands[2]
         with it:
             for op1, op2, out in it:
-                print(op1, op2)
                 method._simple_strided_call((op1, op2, out))
         
         return res
