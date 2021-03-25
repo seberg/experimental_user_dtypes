@@ -15,3 +15,18 @@ as the dust settles and things actually work.
 I decided to use ``cython`` here, but I may change my mind or
 do C and Cython depending for different things, the idea was that
 it may be more useful.
+
+
+What is possible?
+
+```python
+from experimental_user_dtypes import float64unit as u, string_funcs; import numpy as np
+
+F = np.array([u.Quantity(70., "Fahrenheit")])
+C = F.astype(u.Float64UnitDType("Celsius"))
+print(repr(C))
+# array([21.11111111111115 °C], dtype='Float64UnitDType(degC)')
+```
+
+There is also a string comparison function in `string_funcs.string_equal` that works on
+the NumPy bytes ("S" not "U") dtype.
