@@ -144,8 +144,8 @@ cdef int string_equal_strided_loop(
         char **data, npc.intp_t *dimensions, npc.intp_t *strides,
         void *userdata) nogil except -1:
     cdef npc.intp_t N = dimensions[0]
-    cdef double *vals_in = <double *>data[0]
-    cdef double *vals_out = <double *>data[1]
+    cdef char *vals_in = <char *>data[0]
+    cdef char *vals_out = <char *>data[1]
     cdef npc.intp_t strides_in = strides[0]
     cdef npc.intp_t strides_out = strides[1]
 
@@ -164,7 +164,7 @@ cdef int string_equal_strided_loop(
             offset = offset_obj
 
     for i in range(N):
-        vals_out[0] = vals_in[0] * factor - offset
+        (<double *>vals_out)[0] = (<double *>vals_in)[0] * factor - offset
 
         vals_in += strides_in
         vals_out += strides_out
@@ -323,15 +323,15 @@ cdef int multiply_units_strided_loop(
         char **data, npc.intp_t *dimensions, npc.intp_t *strides,
         void *userdata) nogil:
     cdef npc.intp_t N = dimensions[0]
-    cdef double *vals_in0 = <double *>data[0]
-    cdef double *vals_in1 = <double *>data[1]
-    cdef double *vals_out = <double *>data[2]
+    cdef char *vals_in0 = <char *>data[0]
+    cdef char *vals_in1 = <char *>data[1]
+    cdef char *vals_out = <char *>data[2]
     cdef npc.intp_t strides_in0 = strides[0]
     cdef npc.intp_t strides_in1 = strides[1]
     cdef npc.intp_t strides_out = strides[2]
 
     for i in range(N):
-        vals_out[0] = vals_in0[0] * vals_in1[0]
+        (<double *>vals_out)[0] = (<double *>vals_in0)[0] * (<double *>vals_in1)[0]
         vals_in0 += strides_in0
         vals_in1 += strides_in1
         vals_out += strides_out
