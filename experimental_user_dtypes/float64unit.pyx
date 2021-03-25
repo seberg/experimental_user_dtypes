@@ -7,6 +7,7 @@ cimport numpy as npc
 
 from . cimport dtype_api
 from . import dtypes as _npdtypes
+from ._utils import make_binary_ufunclike as _make_binary_ufunclike
 
 # Using unyt, with no particular bias. Just happened to check it first this
 # time around:
@@ -258,4 +259,113 @@ castingimpls[1] = <dtype_api.PyArrayMethod_Spec *>0
 spec.baseclass = <PyTypeObject *>_Float64UnitDTypeBase
 
 Float64UnitDType = dtype_api.PyArrayDTypeMeta_FromSpec(&spec)
+
+
+#
+# Puh, we got a DType, now lets create a multiply function :)
+#
+# NOTE: Please be aware that this is NOT how I imagine Units to work!
+#       Units should be able to re-use existing loops, so hopefully it would
+#       only have to define something similar to the resolve_descriptors
+#       but "inherit" the rest (See the NEP 43 draft)
+#
+# (One more note, we could reuse the above specs/slots, NumPy is done with them)
+
+
+cdef npc.NPY_CASTING multiply_units_resolve_descriptors(method,
+        PyObject *dtypes[3],
+        PyObject *descrs[3], PyObject *descrs_out[3]) except <npc.NPY_CASTING>-1:
+    """
+    The resolver function, could possibly provide a default for this type
+    of unary/casting resolver.
+    """
+    cdef npc.NPY_CASTING casting
+    if descrs[1] == <PyObject *>0:
+        # Shouldn't really happen a cast function?
+        Py_INCREF(<object>descrs[0])
+        descrs_out[0] = <PyObject *>descrs[0]
+        Py_INCREF(<object>descrs[0])
+        descrs_out[1] = <PyObject *>descrs[0]
+
+    try:
+        out_unit = ((<_Float64UnitDTypeBase>descrs[0]).unit *
+                    (<_Float64UnitDTypeBase>descrs[1]).unit)
+    except:
+        # Clearning the error should cause a generic error to be given.
+        # Note that the return value is a detail I still am thinking about
+        # changing.
+        return <npc.NPY_CASTING>-1
+
+    if (descrs[2] != <PyObject *>0
+            and (<_Float64UnitDTypeBase>descrs[2]).unit == out_unit):
+        # retain exact instance when passed in, currently necessary for things
+        # to work smoothly, but should only be a mild performance improvement.
+        out_dtype = <object>descrs[2]
+    else:
+        out_dtype = Float64UnitDType(out_unit)
+
+    Py_INCREF(<object>descrs[0])
+    descrs_out[0] = <PyObject *>descrs[0]
+    Py_INCREF(<object>descrs[1])
+    descrs_out[1] = <PyObject *>descrs[1]
+    Py_INCREF(out_dtype)
+    descrs_out[2] = <PyObject *>out_dtype
+    return npc.NPY_SAFE_CASTING
+
+
+cdef int multiply_units_strided_loop(
+        dtype_api.PyArrayMethod_Context *context,
+        char **data, npc.intp_t *dimensions, npc.intp_t *strides,
+        void *userdata) nogil:
+    cdef npc.intp_t N = dimensions[0]
+    cdef double *vals_in0 = <double *>data[0]
+    cdef double *vals_in1 = <double *>data[1]
+    cdef double *vals_out = <double *>data[2]
+    cdef npc.intp_t strides_in0 = strides[0]
+    cdef npc.intp_t strides_in1 = strides[1]
+    cdef npc.intp_t strides_out = strides[2]
+
+    for i in range(N):
+        vals_out[0] = vals_in0[0] * vals_in1[0]
+        vals_in0 += strides_in0
+        vals_in1 += strides_in1
+        vals_out += strides_out
+
+
+# We now declare the `spec` and fill it (it can be discarted later).
+cdef dtype_api.PyArrayMethod_Spec multiply_spec
+
+# Basic information:
+multiply_spec.name = "unit_multiply"
+multiply_spec.nin = 2
+multiply_spec.nout = 1
+
+# Define the dtypes we operate on:
+cdef PyObject *multiply_dtypes[3]
+multiply_spec.dtypes = multiply_dtypes
+multiply_dtypes[0] = <PyObject *>Float64UnitDType
+multiply_dtypes[1] = <PyObject *>Float64UnitDType
+multiply_dtypes[2] = <PyObject *>Float64UnitDType
+
+
+# Define the function:
+cdef dtype_api.PyType_Slot multiply_slots[3]
+multiply_spec.slots = multiply_slots
+
+# Pass the function using the 0 terminated slots.
+multiply_slots[0].slot = dtype_api.NPY_METH_resolve_descriptors
+multiply_slots[0].pfunc = <void *>multiply_units_resolve_descriptors
+multiply_slots[1].slot = dtype_api.NPY_METH_strided_loop
+multiply_slots[1].pfunc = <void *>multiply_units_strided_loop
+multiply_slots[2].slot = 0
+multiply_slots[2].pfunc = <void *>0
+
+# Not used right now, but we can indicate not to check float errors,
+# we do not require the GIL to be held, which is the default (currently):
+multiply_spec.flags = 0
+
+
+_multiply_untis_arraymethod = dtype_api.PyArrayMethod_FromSpec(&multiply_spec)
+multiply = _make_binary_ufunclike(_multiply_untis_arraymethod,
+        name="string_equal", module=__name__)
 

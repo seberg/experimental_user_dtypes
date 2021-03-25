@@ -26,7 +26,14 @@ F = np.array([u.Quantity(70., "Fahrenheit")])
 C = F.astype(u.Float64UnitDType("Celsius"))
 print(repr(C))
 # array([21.11111111111115 °C], dtype='Float64UnitDType(degC)')
+
+m = np.array([u.Quantity(5., "m")])
+m_squared = u.multiply(m, m)
+print(repr(m_squared))
+# array([25.0 m**2], dtype='Float64UnitDType(m**2)')
 ```
+(Please don't multiple units that can't be multiply, it may crash and I have not checked
+why yet.)
 
 There is also a string comparison function in `string_funcs.string_equal` that works on
 the NumPy bytes ("S" not "U") dtype.
