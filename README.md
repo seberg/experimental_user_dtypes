@@ -5,6 +5,9 @@ DType API.  NumPy has to be cutting edge to try (currently
 this means working of a branch:
 https://github.com/numpy/numpy/compare/main...seberg:experimental-dtype-api).
 
+At this time (should change very soon), also use `NPY_USE_NEW_CASTINGIMPL=1`
+as an environment variable during install to avoid certain issues.
+
 This is *very* early stage, so I will not take care about clean changesets.
 Right now I expect to move this to the NumPy organization as soon
 as the dust settles and things actually work.

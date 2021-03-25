@@ -13,7 +13,7 @@ cdef extern from "Python.h":
 cdef extern from "numpy/experimental_dtype_api.h":
     int import_experimental_dtype_api(int version) except -1
 
-    enum NPY_ARRAYMETHOD_FLAGS:
+    cdef enum NPY_ARRAYMETHOD_FLAGS:
         NPY_METH_REQUIRES_PYAPI
         NPY_METH_NO_FLOATINGPOINT_ERRORS
         NPY_METH_SUPPORTS_UNALIGNED
@@ -22,7 +22,9 @@ cdef extern from "numpy/experimental_dtype_api.h":
         const char *name
         int nin, nout
         npc.NPY_CASTING casting
-        NPY_ARRAYMETHOD_FLAGS flags
+        # TODO: flags should be declared `NPY_ARRAYMETHOD_FLAGS`
+        #       (although maybe it makes sense to ensure it doesn't matter)
+        int flags
         PyObject **dtypes
         PyType_Slot *slots
 
@@ -32,6 +34,7 @@ cdef extern from "numpy/experimental_dtype_api.h":
         # The descriptors:
         npc.PyArray_Descr **descriptors
 
+    int NPY_METH_resolve_descriptors
     int NPY_METH_strided_loop
     int NPY_METH_contiguous_loop
     int NPY_METH_unaligned_strided_loop
@@ -49,30 +52,24 @@ cdef extern from "numpy/experimental_dtype_api.h":
     int NPY_DTYPE_PARAMETRIC
     int NPY_DTYPE_ABSTRACT
 
+    int NPY_DT_discover_descr_from_pyobject
+    int _NPY_DT_is_known_scalar_type
+    int NPY_DT_default_descr
+    int NPY_DT_common_dtype
+    int NPY_DT_common_instance
+    int NPY_DT_setitem
+    int NPY_DT_getitem
+
     ctypedef struct PyArrayDTypeMeta_Spec:
         char *name
         PyTypeObject *typeobj
         int flags
-        PyArrayMethod_Spec *casts
+        PyArrayMethod_Spec **casts
         PyType_Slot *slots
         PyTypeObject *baseclass
 
     object PyArrayDTypeMeta_FromSpec(PyArrayDTypeMeta_Spec *spec)
 
-
-# These are things we have to make nicely available in NumPy eventually
-# (actually should probably use the C names, since that is technically more
-# correct)
-Int8 = type(np.dtype("int8"))
-Uint8 = type(np.dtype("uint8"))
-Int16 = type(np.dtype("int16"))
-Uint16 = type(np.dtype("uint16"))
-Int32 = type(np.dtype("int32"))
-Uint32 = type(np.dtype("uint32"))
-Int64 = type(np.dtype("int64"))
-Uint64 = type(np.dtype("uint64"))
-
-Float16 = type(np.dtype("e"))
-Float32 = type(np.dtype("f"))
-Float64 = type(np.dtype("d"))
+    # Not exported in the normal NumPy pxd (should be part of the enum)
+    cdef npc.NPY_CASTING NPY_CAST_IS_VIEW = <npc.NPY_CASTING>(1 << 16)
 

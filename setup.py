@@ -9,8 +9,8 @@ print(np.__version__)
 
 
 ext_modules=[
-    Extension("experimental_user_dtypes.scaled_uint8",
-            ["experimental_user_dtypes/scaled_uint8.pyx"],
+    Extension("experimental_user_dtypes.float64unit",
+            ["experimental_user_dtypes/float64unit.pyx"],
             include_dirs=[np.get_include()],
             ),
     Extension("experimental_user_dtypes.string_funcs",
