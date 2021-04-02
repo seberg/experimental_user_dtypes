@@ -9,8 +9,8 @@
 #include <numpy/npy_3kcompat.h>
 #include <math.h>
 
-#include "common.h"  /* for error_converting */
-
+/* copied over from private common.h */
+#define error_converting(x)  (((x) == -1) && PyErr_Occurred())
 
 /* Relevant arithmetic exceptions */
 
@@ -1103,7 +1103,7 @@ PyMethodDef module_methods[] = {
 
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
-    "_rational_tests",
+    "rational",
     NULL,
     -1,
     module_methods,
@@ -1113,7 +1113,7 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyMODINIT_FUNC PyInit__rational_tests(void) {
+PyMODINIT_FUNC PyInit_rational(void) {
     PyObject *m = NULL;
     PyObject* numpy_str;
     PyObject* numpy;
@@ -1359,7 +1359,7 @@ PyMODINIT_FUNC PyInit__rational_tests(void) {
 fail:
     if (!PyErr_Occurred()) {
         PyErr_SetString(PyExc_RuntimeError,
-                        "cannot load _rational_tests module.");
+                        "cannot load rational module.");
     }
     if (m) {
         Py_DECREF(m);
