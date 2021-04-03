@@ -910,32 +910,6 @@ PyArray_Descr npyrational_descr = {
     &npyrational_arrfuncs,  /* f */
 };
 
-#define DEFINE_CAST(From,To,statement) \
-    static void \
-    npycast_##From##_##To(void* from_, void* to_, npy_intp n, \
-                          void* fromarr, void* toarr) { \
-        const From* from = (From*)from_; \
-        To* to = (To*)to_; \
-        npy_intp i; \
-        for (i = 0; i < n; i++) { \
-            From x = from[i]; \
-            statement \
-            to[i] = y; \
-        } \
-    }
-#define DEFINE_INT_CAST(bits) \
-    DEFINE_CAST(npy_int##bits,rational,rational y = make_rational_int(x);) \
-    DEFINE_CAST(rational,npy_int##bits,npy_int32 z = rational_int(x); \
-                npy_int##bits y = z; if (y != z) set_overflow();)
-DEFINE_INT_CAST(8)
-DEFINE_INT_CAST(16)
-DEFINE_INT_CAST(32)
-DEFINE_INT_CAST(64)
-DEFINE_CAST(rational,float,double y = rational_double(x);)
-DEFINE_CAST(rational,double,double y = rational_double(x);)
-DEFINE_CAST(npy_bool,rational,rational y = make_rational_int(x);)
-DEFINE_CAST(rational,npy_bool,npy_bool y = rational_nonzero(x);)
-
 #define BINARY_UFUNC(name,intype0,intype1,outtype,exp) \
     void name(char** args, npy_intp const *dimensions, \
               npy_intp const *steps, void* data) { \
@@ -1071,35 +1045,6 @@ PyMODINIT_FUNC PyInit_rational(void) {
                              (PyObject*)&npyrational_descr) < 0) {
         goto fail;
     }
-
-    /* Register casts to and from rational */
-    #define REGISTER_CAST(From,To,from_descr,to_typenum,safe) { \
-            PyArray_Descr* from_descr_##From##_##To = (from_descr); \
-            if (PyArray_RegisterCastFunc(from_descr_##From##_##To, \
-                                         (to_typenum), \
-                                         npycast_##From##_##To) < 0) { \
-                goto fail; \
-            } \
-            if (safe && PyArray_RegisterCanCast(from_descr_##From##_##To, \
-                                                (to_typenum), \
-                                                NPY_NOSCALAR) < 0) { \
-                goto fail; \
-            } \
-        }
-    #define REGISTER_INT_CASTS(bits) \
-        REGISTER_CAST(npy_int##bits, rational, \
-                      PyArray_DescrFromType(NPY_INT##bits), npy_rational, 1) \
-        REGISTER_CAST(rational, npy_int##bits, &npyrational_descr, \
-                      NPY_INT##bits, 0)
-    REGISTER_INT_CASTS(8)
-    REGISTER_INT_CASTS(16)
-    REGISTER_INT_CASTS(32)
-    REGISTER_INT_CASTS(64)
-    REGISTER_CAST(rational,float,&npyrational_descr,NPY_FLOAT,0)
-    REGISTER_CAST(rational,double,&npyrational_descr,NPY_DOUBLE,1)
-    REGISTER_CAST(npy_bool,rational, PyArray_DescrFromType(NPY_BOOL),
-                  npy_rational,1)
-    REGISTER_CAST(rational,npy_bool,&npyrational_descr,NPY_BOOL,0)
 
     /* Register ufuncs */
     #define REGISTER_UFUNC(name,...) { \
