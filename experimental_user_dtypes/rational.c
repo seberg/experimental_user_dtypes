@@ -9,6 +9,9 @@
 #include <numpy/npy_3kcompat.h>
 #include <math.h>
 
+/* For testing experimental dtype API */
+#include "numpy/experimental_dtype_api.h"
+
 /* copied over from private common.h */
 #define error_converting(x)  (((x) == -1) && PyErr_Occurred())
 
@@ -933,6 +936,12 @@ PyMODINIT_FUNC PyInit_rational(void) {
     PyObject* numpy_str;
     PyObject* numpy;
     int npy_rational;
+
+    /* Specify current dtype version here. Mismatches will be reported */
+    int experimental_dtype_version = 0;
+    if (import_experimental_dtype_api(experimental_dtype_version) < 0) {
+        return NULL;
+    }
 
     import_array();
     if (PyErr_Occurred()) {
