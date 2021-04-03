@@ -910,66 +910,6 @@ PyArray_Descr npyrational_descr = {
     &npyrational_arrfuncs,  /* f */
 };
 
-#define BINARY_UFUNC(name,intype0,intype1,outtype,exp) \
-    void name(char** args, npy_intp const *dimensions, \
-              npy_intp const *steps, void* data) { \
-        npy_intp is0 = steps[0], is1 = steps[1], \
-            os = steps[2], n = *dimensions; \
-        char *i0 = args[0], *i1 = args[1], *o = args[2]; \
-        int k; \
-        for (k = 0; k < n; k++) { \
-            intype0 x = *(intype0*)i0; \
-            intype1 y = *(intype1*)i1; \
-            *(outtype*)o = exp; \
-            i0 += is0; i1 += is1; o += os; \
-        } \
-    }
-#define RATIONAL_BINARY_UFUNC(name,type,exp) \
-    BINARY_UFUNC(rational_ufunc_##name,rational,rational,type,exp)
-RATIONAL_BINARY_UFUNC(add,rational,rational_add(x,y))
-RATIONAL_BINARY_UFUNC(subtract,rational,rational_subtract(x,y))
-RATIONAL_BINARY_UFUNC(multiply,rational,rational_multiply(x,y))
-RATIONAL_BINARY_UFUNC(divide,rational,rational_divide(x,y))
-RATIONAL_BINARY_UFUNC(remainder,rational,rational_remainder(x,y))
-RATIONAL_BINARY_UFUNC(floor_divide,rational,
-    make_rational_int(rational_floor(rational_divide(x,y))))
-PyUFuncGenericFunction rational_ufunc_true_divide = rational_ufunc_divide;
-RATIONAL_BINARY_UFUNC(minimum,rational,rational_lt(x,y)?x:y)
-RATIONAL_BINARY_UFUNC(maximum,rational,rational_lt(x,y)?y:x)
-RATIONAL_BINARY_UFUNC(equal,npy_bool,rational_eq(x,y))
-RATIONAL_BINARY_UFUNC(not_equal,npy_bool,rational_ne(x,y))
-RATIONAL_BINARY_UFUNC(less,npy_bool,rational_lt(x,y))
-RATIONAL_BINARY_UFUNC(greater,npy_bool,rational_gt(x,y))
-RATIONAL_BINARY_UFUNC(less_equal,npy_bool,rational_le(x,y))
-RATIONAL_BINARY_UFUNC(greater_equal,npy_bool,rational_ge(x,y))
-
-BINARY_UFUNC(gcd_ufunc,npy_int64,npy_int64,npy_int64,gcd(x,y))
-BINARY_UFUNC(lcm_ufunc,npy_int64,npy_int64,npy_int64,lcm(x,y))
-
-#define UNARY_UFUNC(name,type,exp) \
-    void rational_ufunc_##name(char** args, npy_intp const *dimensions, \
-                               npy_intp const *steps, void* data) { \
-        npy_intp is = steps[0], os = steps[1], n = *dimensions; \
-        char *i = args[0], *o = args[1]; \
-        int k; \
-        for (k = 0; k < n; k++) { \
-            rational x = *(rational*)i; \
-            *(type*)o = exp; \
-            i += is; o += os; \
-        } \
-    }
-UNARY_UFUNC(negative,rational,rational_negative(x))
-UNARY_UFUNC(absolute,rational,rational_abs(x))
-UNARY_UFUNC(floor,rational,make_rational_int(rational_floor(x)))
-UNARY_UFUNC(ceil,rational,make_rational_int(rational_ceil(x)))
-UNARY_UFUNC(trunc,rational,make_rational_int(x.n/d(x)))
-UNARY_UFUNC(square,rational,rational_multiply(x,x))
-UNARY_UFUNC(rint,rational,make_rational_int(rational_rint(x)))
-UNARY_UFUNC(sign,rational,make_rational_int(rational_sign(x)))
-UNARY_UFUNC(reciprocal,rational,rational_inverse(x))
-UNARY_UFUNC(numerator,npy_int64,x.n)
-UNARY_UFUNC(denominator,npy_int64,d(x))
-
 
 
 PyMethodDef module_methods[] = {
@@ -1045,63 +985,6 @@ PyMODINIT_FUNC PyInit_rational(void) {
                              (PyObject*)&npyrational_descr) < 0) {
         goto fail;
     }
-
-    /* Register ufuncs */
-    #define REGISTER_UFUNC(name,...) { \
-        PyUFuncObject* ufunc = \
-            (PyUFuncObject*)PyObject_GetAttrString(numpy, #name); \
-        int _types[] = __VA_ARGS__; \
-        if (!ufunc) { \
-            goto fail; \
-        } \
-        if (sizeof(_types)/sizeof(int)!=ufunc->nargs) { \
-            PyErr_Format(PyExc_AssertionError, \
-                         "ufunc %s takes %d arguments, our loop takes %lu", \
-                         #name, ufunc->nargs, (unsigned long) \
-                         (sizeof(_types)/sizeof(int))); \
-            Py_DECREF(ufunc); \
-            goto fail; \
-        } \
-        if (PyUFunc_RegisterLoopForType((PyUFuncObject*)ufunc, npy_rational, \
-                rational_ufunc_##name, _types, 0) < 0) { \
-            Py_DECREF(ufunc); \
-            goto fail; \
-        } \
-        Py_DECREF(ufunc); \
-    }
-    #define REGISTER_UFUNC_BINARY_RATIONAL(name) \
-        REGISTER_UFUNC(name, {npy_rational, npy_rational, npy_rational})
-    #define REGISTER_UFUNC_BINARY_COMPARE(name) \
-        REGISTER_UFUNC(name, {npy_rational, npy_rational, NPY_BOOL})
-    #define REGISTER_UFUNC_UNARY(name) \
-        REGISTER_UFUNC(name, {npy_rational, npy_rational})
-    /* Binary */
-    REGISTER_UFUNC_BINARY_RATIONAL(add)
-    REGISTER_UFUNC_BINARY_RATIONAL(subtract)
-    REGISTER_UFUNC_BINARY_RATIONAL(multiply)
-    REGISTER_UFUNC_BINARY_RATIONAL(divide)
-    REGISTER_UFUNC_BINARY_RATIONAL(remainder)
-    REGISTER_UFUNC_BINARY_RATIONAL(true_divide)
-    REGISTER_UFUNC_BINARY_RATIONAL(floor_divide)
-    REGISTER_UFUNC_BINARY_RATIONAL(minimum)
-    REGISTER_UFUNC_BINARY_RATIONAL(maximum)
-    /* Comparisons */
-    REGISTER_UFUNC_BINARY_COMPARE(equal)
-    REGISTER_UFUNC_BINARY_COMPARE(not_equal)
-    REGISTER_UFUNC_BINARY_COMPARE(less)
-    REGISTER_UFUNC_BINARY_COMPARE(greater)
-    REGISTER_UFUNC_BINARY_COMPARE(less_equal)
-    REGISTER_UFUNC_BINARY_COMPARE(greater_equal)
-    /* Unary */
-    REGISTER_UFUNC_UNARY(negative)
-    REGISTER_UFUNC_UNARY(absolute)
-    REGISTER_UFUNC_UNARY(floor)
-    REGISTER_UFUNC_UNARY(ceil)
-    REGISTER_UFUNC_UNARY(trunc)
-    REGISTER_UFUNC_UNARY(rint)
-    REGISTER_UFUNC_UNARY(square)
-    REGISTER_UFUNC_UNARY(reciprocal)
-    REGISTER_UFUNC_UNARY(sign)
 
     /* Create module */
     m = PyModule_Create(&moduledef);
