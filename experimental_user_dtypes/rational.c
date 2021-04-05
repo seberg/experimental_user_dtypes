@@ -666,7 +666,7 @@ static PyGetSetDef pyrational_getset[] = {
 
 static PyTypeObject PyRational_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "numpy.core._rational_tests.rational",  /* tp_name */
+    "experimental_user_dtypes.rational",      /* tp_name */
     sizeof(PyRational),                       /* tp_basicsize */
     0,                                        /* tp_itemsize */
     0,                                        /* tp_dealloc */
