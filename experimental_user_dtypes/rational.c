@@ -714,7 +714,9 @@ static PyTypeObject PyRational_Type = {
     0,                                        /* tp_version_tag */
 };
 
-/* NumPy support */
+/* ------------------------ NumPy support ---------------------------------- */
+
+/* DType slots */
 
 static PyObject*
 npyrational_getitem(void* data, void* arr) {
@@ -756,8 +758,27 @@ npyrational_setitem(PyObject* item, void* data, void* arr) {
     return 0;
 }
 
+static PyArray_Descr*
+npyrational_common_dtype(PyArray_Descr* self, PyArray_Descr* other) {
+    // TODO: Actually implement something
+    Py_INCREF(Py_NotImplemented);
+    return (PyArray_Descr*)Py_NotImplemented;
+}
 
+static PyArray_Descr*
+npyrational_common_instance(PyArray_Descr* descr1, PyArray_Descr* descr2) {
+    // TODO: Do something (raise exception for now)
+    PyErr_SetString(PyExc_ValueError, "Not implemented yet.");
+}
 
+static PyArray_Descr*
+npyrational_discover_descr_from_pyobject(PyArray_Descr* cls, PyObject* obj) {
+    // TODO: Do something
+    PyErr_SetString(PyExc_ValueError,
+                    "discover_descr_from_pyobject was called (not implemented)");
+}
+
+/* ----------------- module def --------------------------------- */
 
 PyMethodDef module_methods[] = {
     {0} /* sentinel */
@@ -812,6 +833,44 @@ PyMODINIT_FUNC PyInit_rational(void) {
     if (PyType_Ready(&PyRational_Type) < 0) {
         goto fail;
     }
+
+
+    /* Initialize dtype spec */
+    PyArrayDTypeMeta_Spec spec;
+    spec.name = "RationalDType";
+    spec.module = "rational";
+    spec.typeobj = &PyRational_Type;
+    spec.flags = 0;
+
+    /* Create and populate dtype slots */
+    PyType_Slot slots[5];
+    spec.slots = slots;
+    slots[0].slot = NPY_DT_common_dtype;
+    slots[0].pfunc = (void *)npyrational_common_dtype;
+    slots[1].slot = NPY_DT_common_instance;
+    slots[1].pfunc = (void *)npyrational_common_instance;
+    slots[2].slot = NPY_DT_setitem;
+    slots[2].pfunc = (void *)npyrational_setitem;
+    slots[3].slot = NPY_DT_getitem;
+    slots[3].pfunc = (void *)npyrational_getitem;
+    slots[4].slot = NPY_DT_discover_descr_from_pyobject;
+    slots[4].pfunc = (void *)npyrational_discover_descr_from_pyobject;
+    /* Sentinel */
+    slots[5].slot = 0;
+    slots[5].pfunc = NULL;
+
+    /* Define casts */
+    // TODO: discuss how casting works with seberg? Start by defining none, see what happens
+    PyArrayMethod_Spec* castingimpls[1];
+    castingimpls[0] = NULL;
+
+    spec.casts = &castingimpls[0];
+
+    /* TODO: Is this correct? I don't understand the hierarchy - check NEP 41 */
+    spec.baseclass = &PyRational_Type;
+
+    /* TODO: Causes stack smashing termination on attempted import */
+//    PyObject* RationalDType = PyArrayDTypeMeta_FromSpec(&spec);
 
     /* Create module */
     m = PyModule_Create(&moduledef);
