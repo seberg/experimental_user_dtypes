@@ -758,11 +758,13 @@ npyrational_setitem(PyObject* item, void* data, void* arr) {
     return 0;
 }
 
-static PyArray_Descr*
-npyrational_common_dtype(PyArray_Descr* self, PyArray_Descr* other) {
+/* NOTE: in ndarraytypes.h the types are PyArray_DTypeMeta, but this isn't
+ * exposed yet. Use PyObject instead */
+static PyObject*
+npyrational_common_dtype(PyObject* self, PyObject* other) {
     // TODO: Actually implement something
     Py_INCREF(Py_NotImplemented);
-    return (PyArray_Descr*)Py_NotImplemented;
+    return (PyObject*)Py_NotImplemented;
 }
 
 static PyArray_Descr*
@@ -771,8 +773,10 @@ npyrational_common_instance(PyArray_Descr* descr1, PyArray_Descr* descr2) {
     PyErr_SetString(PyExc_ValueError, "Not implemented yet.");
 }
 
+/* NOTE: type of cls should be PyArray_DTypeMeta, but not exposed - use
+ * PyObject for now. */
 static PyArray_Descr*
-npyrational_discover_descr_from_pyobject(PyArray_Descr* cls, PyObject* obj) {
+npyrational_discover_descr_from_pyobject(PyObject* cls, PyObject* obj) {
     // TODO: Do something
     PyErr_SetString(PyExc_ValueError,
                     "discover_descr_from_pyobject was called (not implemented)");
@@ -863,7 +867,8 @@ PyMODINIT_FUNC PyInit_rational(void) {
 
     spec.casts = &castingimpls[0];
 
-    PyObject* RationalDType = PyArrayDTypeMeta_FromSpec(&spec);
+    /* TODO: When uncommented, causing segfaults at import time */
+//    PyObject* RationalDType = PyArrayDTypeMeta_FromSpec(&spec);
 
     /* Create module */
     m = PyModule_Create(&moduledef);
