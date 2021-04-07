@@ -866,8 +866,11 @@ PyMODINIT_FUNC PyInit_rational(void) {
 
     spec.casts = &castingimpls[0];
 
-    /* TODO: When uncommented, causing segfaults at import time */
-//    PyObject* RationalDType = PyArrayDTypeMeta_FromSpec(&spec);
+    /* Create the dtype */
+    PyObject* RationalDType = PyArrayDTypeMeta_FromSpec(&spec);
+    if(!RationalDType) {
+        goto fail;
+    }
 
     /* Create module */
     m = PyModule_Create(&moduledef);
