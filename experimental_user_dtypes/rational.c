@@ -804,7 +804,6 @@ PyMODINIT_FUNC PyInit_rational(void) {
     PyObject *m = NULL;
     PyObject* numpy_str;
     PyObject* numpy;
-    int npy_rational;
 
     /* Specify current dtype version here. Mismatches will be reported */
     int experimental_dtype_version = 0;
@@ -844,7 +843,7 @@ PyMODINIT_FUNC PyInit_rational(void) {
     spec.flags = 0;
 
     /* Create and populate dtype slots */
-    PyType_Slot slots[5];
+    PyType_Slot slots[6];
     spec.slots = slots;
     slots[0].slot = NPY_DT_common_dtype;
     slots[0].pfunc = (void *)npyrational_common_dtype;
