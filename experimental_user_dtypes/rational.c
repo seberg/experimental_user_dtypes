@@ -841,6 +841,7 @@ PyMODINIT_FUNC PyInit_rational(void) {
     spec.module = "rational";
     spec.typeobj = &PyRational_Type;
     spec.flags = 0;
+    spec.baseclass = NULL;
 
     /* Create and populate dtype slots */
     PyType_Slot slots[6];
@@ -863,7 +864,6 @@ PyMODINIT_FUNC PyInit_rational(void) {
     // TODO: discuss how casting works with seberg? Start by defining none, see what happens
     PyArrayMethod_Spec* castingimpls[1];
     castingimpls[0] = NULL;
-
     spec.casts = &castingimpls[0];
 
     /* Create the dtype */
