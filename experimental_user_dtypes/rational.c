@@ -826,9 +826,6 @@ PyMODINIT_FUNC PyInit_rational(void) {
         goto fail;
     }
 
-    /* Can't set this until we import numpy */
-    PyRational_Type.tp_base = &PyArrayDescr_Type;
-
     /* Initialize rational type object */
     if (PyType_Ready(&PyRational_Type) < 0) {
         goto fail;
@@ -866,11 +863,7 @@ PyMODINIT_FUNC PyInit_rational(void) {
 
     spec.casts = &castingimpls[0];
 
-    /* TODO: Is this correct? I don't understand the hierarchy - check NEP 41 */
-    spec.baseclass = &PyRational_Type;
-
-    /* TODO: Causes stack smashing termination on attempted import */
-//    PyObject* RationalDType = PyArrayDTypeMeta_FromSpec(&spec);
+    PyObject* RationalDType = PyArrayDTypeMeta_FromSpec(&spec);
 
     /* Create module */
     m = PyModule_Create(&moduledef);
