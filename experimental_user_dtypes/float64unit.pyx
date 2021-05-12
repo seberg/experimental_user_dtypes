@@ -17,7 +17,7 @@ import numpy as np
 
 __all__ = ["Quantity", "Float64UnitDType"]
 
-dtype_api.import_experimental_dtype_api(0)
+dtype_api.import_experimental_dtype_api(1)
 
 
 cdef class Quantity:
@@ -370,7 +370,19 @@ multiply_slots[2].pfunc = <void *>0
 multiply_spec.flags = 0
 
 
-_multiply_untis_arraymethod = dtype_api.PyArrayMethod_FromSpec(&multiply_spec)
-multiply = _make_binary_ufunclike(_multiply_untis_arraymethod,
-        name="string_equal", module=__name__)
+dtype_api.PyUFunc_AddLoop_FromSpec(np.multiply, &multiply_spec)
+
+def make_all_unit(dtypes, signature):
+    for fixed in signature:
+        if signature is not None and signature is not Float64UnitDType:
+            return None
+    return (Float64UnitDType,) * 3
+
+# If both are Float64UnitDType, then the loop is found, if one is, promote.
+# This DOES NOT actually work yet (it would require implementing casting)
+# right now a bad RuntimeError is given.
+dtype_api.PyUFunc_AddPromoter(np.multiply,
+        (Float64UnitDType, None, None), make_all_unit)
+dtype_api.PyUFunc_AddPromoter(np.multiply,
+        (None, Float64UnitDType, None), make_all_unit)
 

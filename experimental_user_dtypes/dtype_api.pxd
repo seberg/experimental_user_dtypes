@@ -73,3 +73,7 @@ cdef extern from "numpy/experimental_dtype_api.h":
     # Not exported in the normal NumPy pxd (should be part of the enum)
     cdef npc.NPY_CASTING NPY_CAST_IS_VIEW = <npc.NPY_CASTING>(1 << 16)
 
+    int PyUFunc_AddLoop_FromSpec(npc.ufunc ufunc, PyArrayMethod_Spec *spec)
+
+    int PyUFunc_AddPromoter(npc.ufunc ufunc, object dtypes_tuple, object promoter)
+

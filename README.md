@@ -20,7 +20,8 @@ it may be more useful.
 What is possible?
 
 ```python
-from experimental_user_dtypes import float64unit as u, string_funcs; import numpy as np
+import numpy as np
+from experimental_user_dtypes import float64unit as u, string_funcs
 
 F = np.array([u.Quantity(70., "Fahrenheit")])
 C = F.astype(u.Float64UnitDType("Celsius"))
@@ -28,12 +29,16 @@ print(repr(C))
 # array([21.11111111111115 °C], dtype='Float64UnitDType(degC)')
 
 m = np.array([u.Quantity(5., "m")])
-m_squared = u.multiply(m, m)
+m_squared = m * m
 print(repr(m_squared))
 # array([25.0 m**2], dtype='Float64UnitDType(m**2)')
+
+# If `string_funcs` is imported, this also works (i.e. `np.equal` with strings)
+np.equal(np.array("string", dtype="S"), np.array("other_string", dtype="S"))
 ```
 (Please don't multiple units that can't be multiply, it may crash and I have not checked
-why yet.)
+why yet.  The string equality only works on "S" not "U" dtype.)
 
-There is also a string comparison function in `string_funcs.string_equal` that works on
-the NumPy bytes ("S" not "U") dtype.
+As of now, only typical ufunc calls are included, reductions will _not_ work.
+Note that certain options (such as providing an unaligned loop), will not yet
+give any advantage for universal functions.
