@@ -44,13 +44,13 @@ cdef extern from "numpy/experimental_dtype_api.h":
         char **data, npc.intp_t *dimensions, npc.intp_t *strides,
         void *transferdata) except -1
 
-    object PyArrayMethod_FromSpec(PyArrayMethod_Spec *spec)
+    int PyUFunc_AddLoopFromSpec(object ufunc, PyArrayMethod_Spec *spec) except -1
 
     #
     # DType API.
     #
-    int NPY_DTYPE_PARAMETRIC
-    int NPY_DTYPE_ABSTRACT
+    int NPY_DT_PARAMETRIC
+    int NPY_DT_ABSTRACT
 
     int NPY_DT_discover_descr_from_pyobject
     int _NPY_DT_is_known_scalar_type
@@ -60,6 +60,10 @@ cdef extern from "numpy/experimental_dtype_api.h":
     int NPY_DT_setitem
     int NPY_DT_getitem
 
+    ctypedef struct PyArray_DTypeMeta:
+        # We don't really know what is inside (just its size in C)
+        pass
+
     ctypedef struct PyArrayDTypeMeta_Spec:
         char *name
         PyTypeObject *typeobj
@@ -68,7 +72,8 @@ cdef extern from "numpy/experimental_dtype_api.h":
         PyType_Slot *slots
         PyTypeObject *baseclass
 
-    object PyArrayDTypeMeta_FromSpec(PyArrayDTypeMeta_Spec *spec)
+    int PyArrayInitDTypeMeta_FromSpec(
+            PyArray_DTypeMeta *DType, PyArrayDTypeMeta_Spec *spec) except -1
 
     # Not exported in the normal NumPy pxd (should be part of the enum)
     cdef npc.NPY_CASTING NPY_CAST_IS_VIEW = <npc.NPY_CASTING>(1 << 16)

@@ -7,10 +7,8 @@ cimport numpy as npc
 from . cimport dtype_api
 from libc.string cimport memcmp
 
-from ._utils import make_binary_ufunclike as _make_binary_ufunclike
 
-
-dtype_api.import_experimental_dtype_api(0)
+dtype_api.import_experimental_dtype_api(1)
 
 """
 The ArrayMethod will be used also for registering ufuncs.  At this time
@@ -125,7 +123,6 @@ slots[1].pfunc = <void *>0
 spec.flags = dtype_api.NPY_METH_NO_FLOATINGPOINT_ERRORS
 
 
-_string_equal_arraymethod = dtype_api.PyArrayMethod_FromSpec(&spec)
-string_equal = _make_binary_ufunclike(_string_equal_arraymethod,
-        name="string_equal", module=__name__)
+dtype_api.PyUFunc_AddLoopFromSpec(np.equal, &spec)
+
 

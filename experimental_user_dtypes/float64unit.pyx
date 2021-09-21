@@ -1,13 +1,15 @@
 #cython: language_level=3
 
-from cpython.object cimport PyObject, PyTypeObject
+from cpython.object cimport (
+        PyObject, PyTypeObject, Py_TPFLAGS_DEFAULT, Py_TPFLAGS_BASETYPE)
 from cpython.ref cimport Py_INCREF
+from cpython.type cimport PyType_Ready
 from libc.string cimport memcpy
 cimport numpy as npc
 
 from . cimport dtype_api
 from . import dtypes as _npdtypes
-from ._utils import make_binary_ufunclike as _make_binary_ufunclike
+
 
 # Using unyt, with no particular bias. Just happened to check it first this
 # time around:
@@ -17,7 +19,7 @@ import numpy as np
 
 __all__ = ["Quantity", "Float64UnitDType"]
 
-dtype_api.import_experimental_dtype_api(0)
+dtype_api.import_experimental_dtype_api(1)
 
 
 cdef class Quantity:
@@ -84,7 +86,10 @@ cdef class _Float64UnitDTypeBase(npc.dtype):
     # (which is probably fine, lets just add a `void *reserved` maybe?)
     cdef readonly object unit
     def __cinit__(self, unit):
-        if type(type(self)) is not type(np.dtype):
+        if (type(type(self)) is not type(np.dtype)
+                or type(self) is _Float64UnitDTypeBase):
+            # The "base" class must not be instantiated (the first check should
+            # cover the second one as well really).
             raise RuntimeError("Invalid use of implementation detail!")
         self.unit = Unit(unit)
         self.itemsize = sizeof(double)
@@ -208,7 +213,7 @@ cdef int string_equal_strided_loop_unaligned(
 cdef dtype_api.PyArrayDTypeMeta_Spec spec
 spec.name = "Float64UnitDType"
 spec.typeobj = <PyTypeObject *>Quantity
-spec.flags = dtype_api.NPY_DTYPE_PARAMETRIC
+spec.flags = dtype_api.NPY_DT_PARAMETRIC
 
 # Generic DType slots:
 cdef dtype_api.PyType_Slot slots[5]
@@ -263,8 +268,31 @@ castingimpls[1] = <dtype_api.PyArrayMethod_Spec *>0
 
 spec.baseclass = <PyTypeObject *>_Float64UnitDTypeBase
 
-Float64UnitDType = dtype_api.PyArrayDTypeMeta_FromSpec(&spec)
 
+# Use the C API to create the actual static type, so that we can give
+# it the size of PyArray_DTypeMeta.  This is very ugly, and it would likely
+# be better to just not do it in cython.  But I started in Cython, and it seems
+# easier to do it "manually" here, rather than moving everything to C, or
+# making a dance to define functions in Cython and then export to C.
+cdef dtype_api.PyArray_DTypeMeta float64_struct
+
+# TODO: Should use proper initialization marcos!
+# TODO: is there a better way to write this even if we embrace the approach?
+cdef PyObject *float64_as_obj = <PyObject *>&float64_struct
+cdef type _dtypemeta = <type>type(np.dtype)
+float64_as_obj[0].ob_type = <PyTypeObject *>_dtypemeta
+float64_as_obj[0].ob_refcnt = 1
+
+cdef PyTypeObject *float64_as_type = <PyTypeObject *>&float64_struct
+float64_as_type[0].tp_name = "experimental_user_dtypes.float64unit.Float64DType"
+float64_as_type[0].tp_base = <PyTypeObject *>_Float64UnitDTypeBase
+float64_as_type[0].tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
+
+PyType_Ready(<object>&float64_struct)
+dtype_api.PyArrayInitDTypeMeta_FromSpec(
+        <dtype_api.PyArray_DTypeMeta *>&float64_struct, &spec)
+
+Float64UnitDType = <object>&float64_struct
 
 #
 # Puh, we got a DType, now lets create a multiply function :)
@@ -370,7 +398,5 @@ multiply_slots[2].pfunc = <void *>0
 multiply_spec.flags = 0
 
 
-_multiply_untis_arraymethod = dtype_api.PyArrayMethod_FromSpec(&multiply_spec)
-multiply = _make_binary_ufunclike(_multiply_untis_arraymethod,
-        name="string_equal", module=__name__)
+dtype_api.PyUFunc_AddLoopFromSpec(np.multiply, &multiply_spec)
 
