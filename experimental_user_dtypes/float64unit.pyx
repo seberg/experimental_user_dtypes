@@ -19,7 +19,7 @@ import numpy as np
 
 __all__ = ["Quantity", "Float64UnitDType"]
 
-dtype_api.import_experimental_dtype_api(1)
+dtype_api.import_experimental_dtype_api(2)
 
 
 cdef class Quantity:
@@ -211,7 +211,6 @@ cdef int string_equal_strided_loop_unaligned(
 
 
 cdef dtype_api.PyArrayDTypeMeta_Spec spec
-spec.name = "Float64UnitDType"
 spec.typeobj = <PyTypeObject *>Quantity
 spec.flags = dtype_api.NPY_DT_PARAMETRIC
 

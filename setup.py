@@ -17,6 +17,10 @@ ext_modules=[
             ["experimental_user_dtypes/string_funcs.pyx"],
             include_dirs=[np.get_include()],
             ),
+    Extension("experimental_user_dtypes.promoter_example",
+            ["experimental_user_dtypes/promoter_example.pyx"],
+            include_dirs=[np.get_include()],
+            ),
     ]
 
 

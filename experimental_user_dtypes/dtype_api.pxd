@@ -46,6 +46,8 @@ cdef extern from "numpy/experimental_dtype_api.h":
 
     int PyUFunc_AddLoopFromSpec(object ufunc, PyArrayMethod_Spec *spec) except -1
 
+    int PyUFunc_AddPromoter(object ufunc, object dtypes, object promoter) except -1
+
     #
     # DType API.
     #
@@ -65,7 +67,6 @@ cdef extern from "numpy/experimental_dtype_api.h":
         pass
 
     ctypedef struct PyArrayDTypeMeta_Spec:
-        char *name
         PyTypeObject *typeobj
         int flags
         PyArrayMethod_Spec **casts
@@ -74,6 +75,12 @@ cdef extern from "numpy/experimental_dtype_api.h":
 
     int PyArrayInitDTypeMeta_FromSpec(
             PyArray_DTypeMeta *DType, PyArrayDTypeMeta_Spec *spec) except -1
+
+    PyArray_DTypeMeta *PyArray_CommonDType(
+            PyArray_DTypeMeta *, PyArray_DTypeMeta *) except NULL
+
+    PyArray_DTypeMeta *PyArray_PromoteDTypeSequence(
+            npc.intp_t, PyArray_DTypeMeta **) except NULL
 
     # Not exported in the normal NumPy pxd (should be part of the enum)
     cdef npc.NPY_CASTING NPY_CAST_IS_VIEW = <npc.NPY_CASTING>(1 << 16)

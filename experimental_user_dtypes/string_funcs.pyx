@@ -8,7 +8,7 @@ from . cimport dtype_api
 from libc.string cimport memcmp
 
 
-dtype_api.import_experimental_dtype_api(1)
+dtype_api.import_experimental_dtype_api(2)
 
 """
 The ArrayMethod will be used also for registering ufuncs.  At this time

@@ -23,8 +23,12 @@ or ping me for more information.
 
 What is possible?
 
+Custom DType with ufunc and casting
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 ```python
-from experimental_user_dtypes import float64unit as u, string_funcs; import numpy as np
+import numpy as np
+from experimental_user_dtypes import float64unit as u
 
 F = np.array([u.Quantity(70., "Fahrenheit")])
 C = F.astype(u.Float64UnitDType("Celsius"))
@@ -32,16 +36,43 @@ print(repr(C))
 # array([21.11111111111115 °C], dtype='Float64UnitDType(degC)')
 
 m = np.array([u.Quantity(5., "m")])
-m_squared = u.multiply(m, m)
+m_squared = m * m
 print(repr(m_squared))
 # array([25.0 m**2], dtype='Float64UnitDType(m**2)')
+```
+(Please don't multiple units that can't be multiply, it may crash and I have not checked
+why yet.)
+
+
+Enhanced string equality
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+```python
+import numpy as np
+from experimental_user_dtypes import string_funcs
 
 # If `string_funcs` is imported, this also works (i.e. `np.equal` with strings)
 np.equal(np.array(["string"], dtype="S"), np.array(["other_string"], dtype="S"))
 # array([False])
 ```
-(Please don't multiple units that can't be multiply, it may crash and I have not checked
-why yet.  Reductions do NOT work as of writing this, that is an open PR to NumPy.)
 
-There is also a string comparison function in `string_funcs.string_equal` that works on
-the NumPy bytes ("S" not "U") dtype.
+Customizing NumPy Promotion
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+```python
+import numpy as np
+from experimental_user_dtypes import promoter_example
+
+promoter_example.get_number_of_calls()
+# 0
+
+np.add([1., 2., 3.], [1, 2, 3])
+# array([2., 4., 6.])
+
+promoter_example.get_number_of_calls()
+# 1
+```
+Shows that it is possible implement simple ufunc "promotion" based on the
+common DType API.
+(This modifies the ufunc! In this particular case the modification should
+be completely compatible to current usage though.)
