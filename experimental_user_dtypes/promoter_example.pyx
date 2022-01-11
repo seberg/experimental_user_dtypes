@@ -7,7 +7,7 @@ cimport numpy as npc
 from . cimport dtype_api
 
 
-dtype_api.import_experimental_dtype_api(2)
+dtype_api.import_experimental_dtype_api(3)
 
 """
 This module adds a generic promoter that is called whenver the first argument

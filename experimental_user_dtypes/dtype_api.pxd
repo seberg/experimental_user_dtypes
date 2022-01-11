@@ -62,6 +62,8 @@ cdef extern from "numpy/experimental_dtype_api.h":
     int NPY_DT_setitem
     int NPY_DT_getitem
 
+    PyTypeObject PyArrayDTypeMeta_Type
+
     ctypedef struct PyArray_DTypeMeta:
         # We don't really know what is inside (just its size in C)
         pass
@@ -82,6 +84,4 @@ cdef extern from "numpy/experimental_dtype_api.h":
     PyArray_DTypeMeta *PyArray_PromoteDTypeSequence(
             npc.intp_t, PyArray_DTypeMeta **) except NULL
 
-    # Not exported in the normal NumPy pxd (should be part of the enum)
-    cdef npc.NPY_CASTING NPY_CAST_IS_VIEW = <npc.NPY_CASTING>(1 << 16)
 

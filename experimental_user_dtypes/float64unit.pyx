@@ -19,7 +19,7 @@ import numpy as np
 
 __all__ = ["Quantity", "Float64UnitDType"]
 
-dtype_api.import_experimental_dtype_api(2)
+dtype_api.import_experimental_dtype_api(3)
 
 
 cdef class Quantity:
@@ -113,7 +113,8 @@ cdef class _Float64UnitDTypeBase(npc.dtype):
 
 cdef npc.NPY_CASTING unit_to_unit_cast_resolve_descriptors(method,
         PyObject *dtypes[2],
-        PyObject *descrs[2], PyObject *descrs_out[2]) except <npc.NPY_CASTING>-1:
+        PyObject *descrs[2], PyObject *descrs_out[2],
+        npc.intp_t *view_offset) except <npc.NPY_CASTING>-1:
     """
     The resolver function, could possibly provide a default for this type
     of unary/casting resolver.
@@ -131,8 +132,8 @@ cdef npc.NPY_CASTING unit_to_unit_cast_resolve_descriptors(method,
     conv = (<_Float64UnitDTypeBase>descrs[0]).unit.get_conversion_factor(
                 (<_Float64UnitDTypeBase>descrs[1]).unit)
     if conv == (1.0, None):
-        casting = <npc.NPY_CASTING>(
-                        npc.NPY_SAFE_CASTING | dtype_api.NPY_CAST_IS_VIEW)
+        casting = npc.NPY_SAFE_CASTING
+        view_offset[0] = 0  # cast can be represented by a view, indicate this
     else:
         # Casting can be lossy, so don't lie about that:
         casting = npc.NPY_SAME_KIND_CASTING
@@ -278,7 +279,7 @@ cdef dtype_api.PyArray_DTypeMeta float64_struct
 # TODO: Should use proper initialization marcos!
 # TODO: is there a better way to write this even if we embrace the approach?
 cdef PyObject *float64_as_obj = <PyObject *>&float64_struct
-cdef type _dtypemeta = <type>type(np.dtype)
+cdef type _dtypemeta = <type>&dtype_api.PyArrayDTypeMeta_Type
 float64_as_obj[0].ob_type = <PyTypeObject *>_dtypemeta
 float64_as_obj[0].ob_refcnt = 1
 
@@ -306,7 +307,8 @@ Float64UnitDType = <object>&float64_struct
 
 cdef npc.NPY_CASTING multiply_units_resolve_descriptors(method,
         PyObject *dtypes[3],
-        PyObject *descrs[3], PyObject *descrs_out[3]) except <npc.NPY_CASTING>-1:
+        PyObject *descrs[3], PyObject *descrs_out[3],
+        npc.intp_t *view_offset) except <npc.NPY_CASTING>-1:
     """
     The resolver function, could possibly provide a default for this type
     of unary/casting resolver.
