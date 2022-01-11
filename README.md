@@ -24,7 +24,7 @@ or ping me for more information.
 What is possible?
 
 Custom DType with ufunc and casting
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------
 
 ```python
 import numpy as np
@@ -40,12 +40,13 @@ m_squared = m * m
 print(repr(m_squared))
 # array([25.0 m**2], dtype='Float64UnitDType(m**2)')
 ```
+
 (Please don't multiple units that can't be multiply, it may crash and I have not checked
 why yet.)
 
 
 Enhanced string equality
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 ```python
 import numpy as np
@@ -57,7 +58,7 @@ np.equal(np.array(["string"], dtype="S"), np.array(["other_string"], dtype="S"))
 ```
 
 Customizing NumPy Promotion
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------
 
 ```python
 import numpy as np
