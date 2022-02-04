@@ -1,3 +1,6 @@
+**Please see https://github.com/seberg/unitdtype for a C-only and more extensive and up to date example**
+
+
 **Crude examples using the new, experimental, DType API of NumPy**
 
 This repository uses the new *experimental* NumPy DType and UFunc API.
